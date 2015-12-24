@@ -1,0 +1,70 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:mvc="http://www.springframework.org/schema/mvc" 
+    xmlns:redis="http://www.springframework.org/schema/redis"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd
+    http://www.springframework.org/schema/mvc   
+    http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+    http://www.springframework.org/schema/tx 
+    http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+    http://www.springframework.org/schema/redis
+    http://www.springframework.org/schema/redis/spring-redis.xsd
+    ">
+ 
+    <context:component-scan base-package="com.sweet.queue" />
+ 
+    <bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping" />
+    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" />
+ 
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+    
+    
+       <context:property-placeholder location="classpath:redis.properties" />
+      <bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+          <property name="maxIdle" value="${redis.maxIdle}" />
+          <property name="maxActive" value="${redis.maxActive}" />
+          <property name="maxWait" value="${redis.maxWait}" />
+          <property name="testOnBorrow" value="${redis.testOnBorrow}" />
+      </bean>
+
+     <bean id="connectionFactory"
+         class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory"
+         p:host-name="${redis.host}" 
+         p:port="${redis.port}" 
+         p:password="${redis.pass}"
+         p:pool-config-ref="poolConfig" />
+
+     <bean id="redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+         <property name="connectionFactory" ref="connectionFactory" />
+ <!--         如果不配置Serializer，那么存储的时候智能使用String，如果用User类型存储，那么会提示错误User can't cast to String！！！
+  -->        <property name="keySerializer">
+             <bean
+                 class="org.springframework.data.redis.serializer.StringRedisSerializer" />
+         </property>
+         <property name="valueSerializer">
+          <bean
+                 class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer" />
+         </property>
+     </bean>
+    
+    <bean id="serialization"
+		class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer" />
+     <bean id="viewResolver" 
+         class="org.springframework.web.servlet.view.InternalResourceViewResolver" />
+       
+       <redis:listener-container connection-factory="connectionFactory">
+		<!-- the method attribute can be skipped as the default method name is 
+			"handleMessage" -->
+		<redis:listener ref="listener" method="onMessage"
+			serializer="serialization" topic="sweet" />
+	</redis:listener-container>
+ 
+</beans>
