@@ -28,12 +28,16 @@ public class redisServiceImpl implements redisService{
 			 RedisSerializer<String> redisSerializer = redisTemplate .getStringSerializer(); 
 			 byte[] key = redisSerializer.serialize("sweet");
 			 byte[] value = redisSerializer.serialize("shiwei"); 
-			return redisConnection.setNX(key, value); } }); 
+			 return redisConnection.setNX(key, value); } }); 
 		return result;
 	}
 
 	public void sentMessage(String channel, Serializable message)throws Exception {
 		redisTemplate.convertAndSend(channel, message);
+	}
+	
+	public void addTest(){
+		//redisTemplate.opsForList().leftPush("", value)
 	}
 	
 	
